@@ -6,7 +6,7 @@ export default function Home({data}) {
   
   return (
     <Layout data={data}>
-
+      content
     </Layout>
   )
 }
@@ -28,6 +28,7 @@ export async function getStaticProps(context) {
          footerMenus: data?.footerMenus?.edges || [],
         },
         footer: data?.footer || [],
+        page: data?.page || []
      }
     },
     revalidate: 1
