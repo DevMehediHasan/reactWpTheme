@@ -4,7 +4,8 @@ import {isEmpty} from 'lodash';
 import {GET_PAGE} from '../src/queries/pages/get-page';
 import {useRouter} from 'next/router';
 import Layout from '../src/components/layout';
-import {isCustomPageUri} from "../src/utils/slugs";
+
+import {FALLBACK, handleRedirectsAndReturnData, isCustomPageUri} from '../src/utils/slugs';
 
 const Page = ( {data} ) => {
 	const router = useRouter();
@@ -82,6 +83,6 @@ export async function getStaticPaths() {
 
 	return {
 		paths: pathsData,
-		fallback: true,
+		fallback: FALLBACK
 	};
 }
