@@ -4,8 +4,8 @@ import {isEmpty} from 'lodash';
 import {GET_PAGE} from '../src/queries/pages/get-page';
 import {useRouter} from 'next/router';
 import Layout from '../src/components/layout';
-
-import {FALLBACK, handleRedirectsAndReturnData, isCustomPageUri} from '../src/utils/slugs';
+import {FALLBACK, handleRedirectsAndReturnData, isCustomPageUri} from '../src/utils/slug';
+import {sanitize} from '../src/utils/miscellaneous';
 
 const Page = ( {data} ) => {
 	const router = useRouter();
@@ -17,37 +17,35 @@ const Page = ( {data} ) => {
 	}
 
 	return (
-        <Layout data={data}>
-            {router?.query?.slug.join("/")}
-        </Layout>
-    );
-}
+		<Layout data={data}>
+			<div dangerouslySetInnerHTML={{__html: sanitize( data?.page?.content ?? {} )}}/>
+		</Layout>
+	);
+};
 
 export default Page;
 
 export async function getStaticProps( {params} ) {
-	const {data} = await client.query( {
+	const {data, errors} = await client.query( {
 		query: GET_PAGE,
 		variables: {
 			uri: params?.slug.join( '/' ),
 		},
 	} );
 
-	return {
-        props: {
-            data: {
-                header: data?.header || [],
-                menus: {
-                    headerMenus: data?.headerMenus?.edges || [],
-                    footerMenus: data?.footerMenus?.edges || [],
-                },
-                footer: data?.footer || [],
-                page:data?.page ?? {},
-                path: params?.slug.join("/"),
-            }
-        },
-        revalidate: 1,
-    };
+	const defaultProps = {
+		props: {
+			data: data || {}
+		},
+		/**
+         * Revalidate means that if a new request comes to server, then every 1 sec it will check
+         * if the data is changed, if it is changed then it will update the
+         * static file inside .next folder with the new data, so that any 'SUBSEQUENT' requests should have updated data.
+         */
+		revalidate: 1,
+	};
+
+	return handleRedirectsAndReturnData( defaultProps, data, errors, 'page' );
 }
 
 /**
@@ -75,7 +73,7 @@ export async function getStaticPaths() {
 	const pathsData = [];
 
 	data?.pages?.nodes && data?.pages?.nodes.map( page => {
-		if ( ! isEmpty( page?.uri ) && ! isCustomPageUri(page?.uri) ) {
+		if ( ! isEmpty( page?.uri ) && ! isCustomPageUri( page?.uri ) ) {
 			const slugs = page?.uri?.split( '/' ).filter( pageSlug => pageSlug );
 			pathsData.push( {params: {slug: slugs}} );
 		}
